@@ -87,15 +87,15 @@ def show_matches(image_1, image_2, matches):
 
 def _main(img_path_1=_DEFAULT_IMAGE_1, img_path_2=_DEFAULT_IMAGE_2):
     start = time.perf_counter()
-    image1 = imageio.imread(img_path_1)
-    image2 = imageio.imread(img_path_2)
+    image_1 = imageio.imread(img_path_1)
+    image_2 = imageio.imread(img_path_2)
     print("read image time is %6.3f" % (time.perf_counter() - start))
 
     start = time.perf_counter()
-    matches = extract_and_match(image1, image2)
+    matches = extract_and_match(image_1, image_2)
     print("whole time is %6.3f" % (time.perf_counter() - start))
 
-    show_matches(image1, image2, matches)
+    show_matches(image_1, image_2, matches)
 
 
 if __name__ == "__main__":
