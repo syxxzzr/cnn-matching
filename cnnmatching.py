@@ -60,12 +60,12 @@ def _extract_and_match(image_1, image_2):
         residual_threshold=_RESIDUAL_THRESHOLD,
         max_trials=1000,
     )
-    matches = np.hstack((locations_1_to_use[inliers], locations_2_to_use[inliers]))
+    matches = np.stack((locations_1_to_use[inliers], locations_2_to_use[inliers]), axis=1)
 
-    return locations_1_to_use, locations_2_to_use, matches
+    return matches
 
 
-def _show_matches(image1, image2, locations_1_to_use, locations_2_to_use, matches):
+def _show_matches(image1, image2, matches):
     plt.rcParams["savefig.dpi"] = 100
     plt.rcParams["figure.dpi"] = 100
     plt.rcParams["figure.figsize"] = (4.0, 3.0)
@@ -75,8 +75,6 @@ def _show_matches(image1, image2, locations_1_to_use, locations_2_to_use, matche
         axis,
         image1,
         image2,
-        locations_1_to_use,
-        locations_2_to_use,
         matches,
         plot_matche_points=False,
         matchline=True,
@@ -94,10 +92,10 @@ def main(imgfile1=_DEFAULT_IMAGE_1, imgfile2=_DEFAULT_IMAGE_2):
     print("read image time is %6.3f" % (time.perf_counter() - start))
 
     start = time.perf_counter()
-    locations_1_to_use, locations_2_to_use, matches = _extract_and_match(image1, image2)
+    matches = _extract_and_match(image1, image2)
     print("whole time is %6.3f" % (time.perf_counter() - start))
 
-    _show_matches(image1, image2, locations_1_to_use, locations_2_to_use, matches)
+    _show_matches(image1, image2, matches)
 
 
 if __name__ == "__main__":
