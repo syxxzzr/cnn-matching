@@ -9,14 +9,28 @@ _TEST_IMG_1_PATH = r'E:\cmm_proj\QXSLAB_SAROPT\test\opt_256_oc_0.2'
 _TEST_IMG_2_PATH = r'E:\cmm_proj\QXSLAB_SAROPT\test\sar_256_oc_0.2'
 
 
-def evaluate_matches(matches, epsilon=3.0):
+def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
     total = matches.shape[0]
     if total == 0:
         return {
             'NCM': 0, 'SR': 0.0, 'RMSE': 0.0
         }
 
-    dists = np.linalg.norm(matches[:, 0, :] - matches[:, 1, :], axis=1)
+    pts_1 = matches[:, 0, :]
+    pts_2 = matches[:, 1, :]
+
+    if affine_matrix is not None:
+        affine = np.asarray(affine_matrix, dtype=float)
+        if affine.shape == (2, 3):
+            row = np.array([[0, 0, 1]], dtype=float)
+            affine = np.vstack([affine, row])
+        elif affine.shape != (3, 3):
+            raise ValueError("affine_matrix must be (2,3) or (3,3)")
+        ones = np.ones((total, 1))
+        pts_1_h = np.hstack([pts_1, ones])
+        pts_1 = (affine @ pts_1_h.T).T[:, :2]
+
+    dists = np.linalg.norm(pts_1 - pts_2, axis=1)
 
     correct_mask = dists <= epsilon
     NCM = np.sum(correct_mask)
