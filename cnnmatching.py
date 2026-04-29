@@ -1,6 +1,4 @@
-import sys
 import time
-
 import cv2
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
@@ -15,16 +13,9 @@ _DEFAULT_IMAGE_1 = "df-ms-data/1/df-uav-sar-500.jpg"
 _DEFAULT_IMAGE_2 = "df-ms-data/1/df-googleearth-1k-20181029.jpg"
 
 
-def _extract_and_match(image_1, image_2, start):
-    start0 = time.perf_counter()
-
+def _extract_and_match(image_1, image_2):
     kps_1, _, des_1 = cnn_feature_extract(image_1, nfeatures=-1)
     kps_2, _, des_2 = cnn_feature_extract(image_2, nfeatures=-1)
-
-    print(
-        "Feature_extract time is %6.3f, left: %6.3f,right %6.3f"
-        % ((time.perf_counter() - start), len(kps_1), len(kps_2))
-    )
 
     flann = cv2.FlannBasedMatcher(
         dict(algorithm=1, trees=5),
@@ -69,9 +60,7 @@ def _extract_and_match(image_1, image_2, start):
         residual_threshold=_RESIDUAL_THRESHOLD,
         max_trials=1000,
     )
-    print("Found %d inliers" % sum(inliers))
     matches = np.hstack((locations_1_to_use[inliers], locations_2_to_use[inliers]))
-    print("whole time is %6.3f" % (time.perf_counter() - start0))
 
     return locations_1_to_use, locations_2_to_use, matches
 
@@ -104,9 +93,10 @@ def main(imgfile1=_DEFAULT_IMAGE_1, imgfile2=_DEFAULT_IMAGE_2):
     image2 = imageio.imread(imgfile2)
     print("read image time is %6.3f" % (time.perf_counter() - start))
 
-    locations_1_to_use, locations_2_to_use, matches = _extract_and_match(
-        image1, image2, start
-    )
+    start = time.perf_counter()
+    locations_1_to_use, locations_2_to_use, matches = _extract_and_match(image1, image2)
+    print("whole time is %6.3f" % (time.perf_counter() - start))
+
     _show_matches(image1, image2, locations_1_to_use, locations_2_to_use, matches)
 
 
