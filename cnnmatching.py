@@ -65,7 +65,7 @@ def extract_and_match(image_1, image_2):
     return matches
 
 
-def show_matches(image1, image2, matches):
+def show_matches(image_1, image_2, matches):
     plt.rcParams["savefig.dpi"] = 100
     plt.rcParams["figure.dpi"] = 100
     plt.rcParams["figure.figsize"] = (4.0, 3.0)
@@ -73,8 +73,8 @@ def show_matches(image1, image2, matches):
     _, axis = plt.subplots()
     plotmatch.plot_matches(
         axis,
-        image1,
-        image2,
+        image_1,
+        image_2,
         matches,
         plot_matche_points=False,
         matchline=True,
@@ -85,10 +85,10 @@ def show_matches(image1, image2, matches):
     plt.show()
 
 
-def _main(imgfile_1=_DEFAULT_IMAGE_1, imgfile_2=_DEFAULT_IMAGE_2):
+def _main(img_path_1=_DEFAULT_IMAGE_1, img_path_2=_DEFAULT_IMAGE_2):
     start = time.perf_counter()
-    image1 = imageio.imread(imgfile_1)
-    image2 = imageio.imread(imgfile_2)
+    image1 = imageio.imread(img_path_1)
+    image2 = imageio.imread(img_path_2)
     print("read image time is %6.3f" % (time.perf_counter() - start))
 
     start = time.perf_counter()
