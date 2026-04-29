@@ -15,22 +15,22 @@ _DEFAULT_IMAGE_1 = "df-ms-data/1/df-uav-sar-500.jpg"
 _DEFAULT_IMAGE_2 = "df-ms-data/1/df-googleearth-1k-20181029.jpg"
 
 
-def _extract_and_match(image1, image2, start):
+def _extract_and_match(image_1, image_2, start):
     start0 = time.perf_counter()
 
-    kps_left, _, des_left = cnn_feature_extract(image1, nfeatures=-1)
-    kps_right, _, des_right = cnn_feature_extract(image2, nfeatures=-1)
+    kps_1, _, des_1 = cnn_feature_extract(image_1, nfeatures=-1)
+    kps_2, _, des_2 = cnn_feature_extract(image_2, nfeatures=-1)
 
     print(
         "Feature_extract time is %6.3f, left: %6.3f,right %6.3f"
-        % ((time.perf_counter() - start), len(kps_left), len(kps_right))
+        % ((time.perf_counter() - start), len(kps_1), len(kps_2))
     )
 
     flann = cv2.FlannBasedMatcher(
         dict(algorithm=1, trees=5),
         dict(checks=40),
     )
-    knn_matches = flann.knnMatch(des_left, des_right, k=2)
+    knn_matches = flann.knnMatch(des_1, des_2, k=2)
 
     good_matches = []
     locations_1_to_use = []
@@ -45,13 +45,13 @@ def _extract_and_match(image1, image2, start):
         if match_2.distance > match_1.distance + distance_diff_avg:
             good_matches.append(match_1)
             point_2 = cv2.KeyPoint(
-                kps_right[match_1.trainIdx][0],
-                kps_right[match_1.trainIdx][1],
+                kps_2[match_1.trainIdx][0],
+                kps_2[match_1.trainIdx][1],
                 1,
             )
             point_1 = cv2.KeyPoint(
-                kps_left[match_1.queryIdx][0],
-                kps_left[match_1.queryIdx][1],
+                kps_1[match_1.queryIdx][0],
+                kps_1[match_1.queryIdx][1],
                 1,
             )
             locations_1_to_use.append([point_1.pt[0], point_1.pt[1]])
