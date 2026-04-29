@@ -70,9 +70,7 @@ def _extract_and_match(image1, image2, start):
         max_trials=1000,
     )
     print("Found %d inliers" % sum(inliers))
-
-    inlier_idxs = np.nonzero(inliers)[0]
-    matches = np.column_stack((inlier_idxs, inlier_idxs))
+    matches = np.hstack((locations_1_to_use[inliers], locations_2_to_use[inliers]))
     print("whole time is %6.3f" % (time.perf_counter() - start0))
 
     return locations_1_to_use, locations_2_to_use, matches
