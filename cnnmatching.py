@@ -48,8 +48,6 @@ def extract_and_match(image_1, image_2):
             locations_1_to_use.append([point_1.pt[0], point_1.pt[1]])
             locations_2_to_use.append([point_2.pt[0], point_2.pt[1]])
 
-    print("match num is %d" % len(good_matches))
-
     locations_1_to_use = np.array(locations_1_to_use)
     locations_2_to_use = np.array(locations_2_to_use)
 
