@@ -85,10 +85,10 @@ def show_matches(image1, image2, matches):
     plt.show()
 
 
-def _main(imgfile1=_DEFAULT_IMAGE_1, imgfile2=_DEFAULT_IMAGE_2):
+def _main(imgfile_1=_DEFAULT_IMAGE_1, imgfile_2=_DEFAULT_IMAGE_2):
     start = time.perf_counter()
-    image1 = imageio.imread(imgfile1)
-    image2 = imageio.imread(imgfile2)
+    image1 = imageio.imread(imgfile_1)
+    image2 = imageio.imread(imgfile_2)
     print("read image time is %6.3f" % (time.perf_counter() - start))
 
     start = time.perf_counter()
