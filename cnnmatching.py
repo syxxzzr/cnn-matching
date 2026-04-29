@@ -13,7 +13,7 @@ _DEFAULT_IMAGE_1 = "df-ms-data/1/df-uav-sar-500.jpg"
 _DEFAULT_IMAGE_2 = "df-ms-data/1/df-googleearth-1k-20181029.jpg"
 
 
-def _extract_and_match(image_1, image_2):
+def extract_and_match(image_1, image_2):
     kps_1, _, des_1 = cnn_feature_extract(image_1, nfeatures=-1)
     kps_2, _, des_2 = cnn_feature_extract(image_2, nfeatures=-1)
 
@@ -65,7 +65,7 @@ def _extract_and_match(image_1, image_2):
     return matches
 
 
-def _show_matches(image1, image2, matches):
+def show_matches(image1, image2, matches):
     plt.rcParams["savefig.dpi"] = 100
     plt.rcParams["figure.dpi"] = 100
     plt.rcParams["figure.figsize"] = (4.0, 3.0)
@@ -85,18 +85,18 @@ def _show_matches(image1, image2, matches):
     plt.show()
 
 
-def main(imgfile1=_DEFAULT_IMAGE_1, imgfile2=_DEFAULT_IMAGE_2):
+def _main(imgfile1=_DEFAULT_IMAGE_1, imgfile2=_DEFAULT_IMAGE_2):
     start = time.perf_counter()
     image1 = imageio.imread(imgfile1)
     image2 = imageio.imread(imgfile2)
     print("read image time is %6.3f" % (time.perf_counter() - start))
 
     start = time.perf_counter()
-    matches = _extract_and_match(image1, image2)
+    matches = extract_and_match(image1, image2)
     print("whole time is %6.3f" % (time.perf_counter() - start))
 
-    _show_matches(image1, image2, matches)
+    show_matches(image1, image2, matches)
 
 
 if __name__ == "__main__":
-    main()
+    _main()
