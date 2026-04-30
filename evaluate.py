@@ -2,11 +2,8 @@ import csv
 import time
 import os
 import numpy as np
-import imageio.v2 as imageio
 import cnnmatching
-
-_TEST_IMG_1_PATH = r'E:\cmm_proj\QXSLAB_SAROPT\test\opt_256_oc_0.2'
-_TEST_IMG_2_PATH = r'E:\cmm_proj\QXSLAB_SAROPT\test\sar_256_oc_0.2'
+import load_dataset
 
 
 def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
@@ -50,9 +47,9 @@ def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
 
 
 if __name__ == '__main__':
-    # Only calculate the file both existed in the two folders
-    img_list = list(set(os.listdir(_TEST_IMG_1_PATH)) & set(os.listdir(_TEST_IMG_2_PATH)))
-    print(f'{len(img_list)} image files found to calculate\n')
+    img_count, img_yield = load_dataset.load_QXSLAB_SAROPT()
+    print(f'{img_count} image files found to calculate\n')
+
 
     result_dir = os.path.join('result', time.strftime('%Y-%m-%d %H-%M-%S'))
     os.makedirs(result_dir)
@@ -68,12 +65,9 @@ if __name__ == '__main__':
     valid_count = 0
     indicators_sum = {'MT': 0., 'SR': 0., 'RMSE': 0.}
 
-    for img_name in img_list:
-        try:
-            image_1 = imageio.imread(os.path.join(_TEST_IMG_1_PATH, img_name))
-            image_2 = imageio.imread(os.path.join(_TEST_IMG_2_PATH, img_name))
-        except:
-            print(f'{img_name:<16d} Failed to open file')
+    for image_1, image_2, img_name in img_yield():
+        if image_1.shape == (0, ) or image_2.shape == (0, ):
+            print(f'{img_name:<16} Failed to open file')
             continue
 
         start_time = time.perf_counter()
