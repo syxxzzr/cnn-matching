@@ -16,7 +16,7 @@ def _yield_QXSLAB_SAROPT_img(img_path_1, img_path_2, img_list):
             image_1 = np.array([])
             image_2 = np.array([])
 
-        yield img_name, image_1, image_2, None
+        yield img_name.rstrip('.png'), image_1, image_2, None
 
 
 def load_QXSLAB_SAROPT(img_path_1 = _QXSLAB_SAROPT_TEST_IMG_PATH_1, img_path_2 = _QXSLAB_SAROPT_TEST_IMG_PATH_2):
@@ -36,7 +36,7 @@ def _yield_OSdataset2_img(dataset_path, count):
             image_1 = np.array([])
             image_2 = np.array([])
 
-        yield f'opt{i}.png', image_1, image_2, None
+        yield f'image_pair_{i}', image_1, image_2, None
 
 def load_OSdataset2(dataset_path = _OSdataset2_TEST_IMG_PATH):
     image_list = os.listdir(dataset_path)
