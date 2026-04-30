@@ -5,6 +5,7 @@ import numpy as np
 import cnnmatching
 import load_dataset
 
+_EVALUATE_EPSILON = 3.0
 
 def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
     total = matches.shape[0]
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     valid_count = 0
     indicators_sum = {'MT': 0., 'SR': 0., 'RMSE': 0.}
 
-    for image_1, image_2, img_name in img_yield():
+    for img_name, image_1, image_2, affine_matrix in img_yield():
         if image_1.shape == (0, ) or image_2.shape == (0, ):
             print(f'{img_name:<16} Failed to open file')
             continue
@@ -74,7 +75,7 @@ if __name__ == '__main__':
         matches = cnnmatching.extract_and_match(image_1, image_2)
         time_spend = time.perf_counter() - start_time
 
-        res = evaluate_matches(matches)
+        res = evaluate_matches(matches, _EVALUATE_EPSILON, affine_matrix)
 
         csv_writer.writerow([img_name, matches.shape[0], time_spend, res['NCM'], res['SR'], res['RMSE']])
         np.savez(os.path.join(result_dir, f'{img_name}.npz'),
