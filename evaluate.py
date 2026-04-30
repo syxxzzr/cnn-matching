@@ -6,6 +6,7 @@ import cnnmatching
 import load_dataset
 
 _EVALUATE_EPSILON = 3.0
+_DATASET_LOADER = load_dataset.load_OSdataset2
 
 def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
     total = matches.shape[0]
@@ -48,7 +49,7 @@ def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
 
 
 if __name__ == '__main__':
-    img_count, img_yield = load_dataset.load_QXSLAB_SAROPT()
+    img_count, img_yield = _DATASET_LOADER()
     print(f'{img_count} image files found to calculate\n')
 
 
