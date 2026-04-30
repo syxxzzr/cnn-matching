@@ -63,7 +63,10 @@ if __name__ == '__main__':
     csv_writer.writerow(['File Name', 'Total Matches', 'MT', 'NCM', 'SR', 'RMSE'])
 
     print('File Name        Total Matches MT(s)  NCM   SR     RMSE')
-    print('-'*16, '-'*13, '-'*5, '-'*5, '-'*6, '-'*5)
+    print('-' * 16, '-' * 13, '-' * 5, '-' * 5, '-' * 6, '-' * 5)
+
+    valid_count = 0
+    indicators_sum = {'MT': 0., 'SR': 0., 'RMSE': 0.}
 
     for img_name in img_list:
         try:
@@ -83,7 +86,19 @@ if __name__ == '__main__':
         np.savez(os.path.join(result_dir, f'{img_name}.npz'),
                  Matches=matches, MT=time_spend, NCM=res['NCM'], SR=res['SR'], RMSE=res['RMSE'])
 
+        valid_count += 1
+        indicators_sum['MT'] += res['MT']
+        indicators_sum['SR'] += res['SR']
+        indicators_sum['RMSE'] += res['RMSE']
+
         print(f'{img_name:<16} {matches.shape[0]:<13d} {time_spend:<5.2f} '
               f'{res['NCM']:<5d} {res['SR']:<6.2%} {res['RMSE']:<5.2f}')
+
+    print('-' * 55)
+    if valid_count == 0:
+        print(f'{'No valid image calculated':>55}')
+    else:
+        print('{:>55}'.format(
+            f'Average:\tMT:{indicators_sum['MT'] / valid_count:<5.2f}s SR:{indicators_sum['SR'] / valid_count:<6.2%} RMSE:{indicators_sum['RMSE'] / valid_count:<5.2f}'))
 
     csv_file.close()
