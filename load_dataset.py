@@ -25,7 +25,7 @@ def load_QXSLAB_SAROPT(img_path_1 = _QXSLAB_SAROPT_TEST_IMG_PATH_1, img_path_2 =
     return len(img_list), lambda : _yield_QXSLAB_SAROPT_img(img_path_1, img_path_2, img_list)
 
 """ Load OSdataset 2.0 dataset """
-_OSdataset2_TEST_IMG_PATH = r'E:\cmm_proj\OSDataset2.0\Patch-level Subset\OSdataset\512\val'
+_OSdataset2_TEST_IMG_PATH = r'E:\cmm_proj\OSDataset2.0\Patch-level Subset\OSdataset\512\test'
 
 def _yield_OSdataset2_img(dataset_path, count):
     for i in range(1, count + 1):

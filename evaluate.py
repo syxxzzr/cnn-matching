@@ -98,7 +98,7 @@ if __name__ == '__main__':
     if valid_count == 0:
         print(f'{'No valid image calculated':>54}')
     else:
-        print('{:>54}\n{:54}'.format(
+        print('{:>54}\n{:>54}'.format(
             f'MT:{indicators_sum['MT'] / valid_count:<5.2f}s RMSE:{indicators_sum['RMSE'] / valid_count:<5.2f}',
             f'NTP:{indicators_sum['NTP'] / valid_count:<5.2f} NCM:{indicators_sum['NCM'] / valid_count:<5.2f} SR:{indicators_sum['SR'] / valid_count:<6.2%}'))
 
