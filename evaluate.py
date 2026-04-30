@@ -87,7 +87,7 @@ if __name__ == '__main__':
                  Matches=matches, MT=time_spend, NCM=res['NCM'], SR=res['SR'], RMSE=res['RMSE'])
 
         valid_count += 1
-        indicators_sum['MT'] += res['MT']
+        indicators_sum['MT'] += time_spend
         indicators_sum['SR'] += res['SR']
         indicators_sum['RMSE'] += res['RMSE']
 
