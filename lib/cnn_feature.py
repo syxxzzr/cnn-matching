@@ -20,12 +20,13 @@ def _resolve_device(device=None):
     return device
 
 
-def create_feature_extractor(device=None):
+def create_feature_extractor(device=None, cbam_weight_file=None):
     target_device = _resolve_device(device)
     extractor = D2Net(
         model_file=_MODEL_FILE,
         use_relu=True,
         use_cuda=(target_device.type == "cuda"),
+        cbam_weight_file=cbam_weight_file,
     )
     extractor.eval()
     if target_device.type == "cuda":

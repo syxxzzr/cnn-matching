@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from lib.cbam import CBAM
+
 
 class DenseFeatureExtractionModule(nn.Module):
     def __init__(self, use_relu=True, use_cuda=True):
@@ -32,21 +34,30 @@ class DenseFeatureExtractionModule(nn.Module):
             nn.Conv2d(512, 512, 3, padding=2, dilation=2),
         )
         self.num_channels = 512
+        self.cbam = CBAM(gate_channels=self.num_channels)
 
         self.use_relu = use_relu
 
         if use_cuda:
             self.model = self.model.cuda()
+            self.cbam = self.cbam.cuda()
 
     def forward(self, batch):
         output = self.model(batch)
+        output = self.cbam(output)
         if self.use_relu:
             output = F.relu(output)
         return output
 
 
 class D2Net(nn.Module):
-    def __init__(self, model_file=None, use_relu=True, use_cuda=True):
+    def __init__(
+        self,
+        model_file=None,
+        use_relu=True,
+        use_cuda=True,
+        cbam_weight_file=None,
+    ):
         super(D2Net, self).__init__()
 
         self.dense_feature_extraction = DenseFeatureExtractionModule(
@@ -58,7 +69,48 @@ class D2Net(nn.Module):
         self.localization = HandcraftedLocalizationModule()
 
         if model_file is not None:
-            self.load_state_dict(torch.load(model_file)['model'])
+            model_state_dict = torch.load(model_file)["model"]
+            if not any(
+                key.startswith("dense_feature_extraction.cbam.")
+                for key in model_state_dict
+            ):
+                random_cbam_state = self.dense_feature_extraction.cbam.state_dict()
+                for key, value in random_cbam_state.items():
+                    model_state_dict[
+                        "dense_feature_extraction.cbam.{}".format(key)
+                    ] = value
+            self.load_state_dict(model_state_dict)
+        if cbam_weight_file is not None:
+            self.load_cbam_weights(cbam_weight_file)
+
+    def load_cbam_weights(self, cbam_weight_file):
+        checkpoint = torch.load(cbam_weight_file, map_location="cpu")
+        if isinstance(checkpoint, dict) and "model" in checkpoint and isinstance(
+            checkpoint["model"], dict
+        ):
+            state_dict = checkpoint["model"]
+        elif isinstance(checkpoint, dict) and "state_dict" in checkpoint and isinstance(
+            checkpoint["state_dict"], dict
+        ):
+            state_dict = checkpoint["state_dict"]
+        else:
+            state_dict = checkpoint
+
+        cbam_state_dict = {}
+        for raw_key, value in state_dict.items():
+            key = raw_key[7:] if raw_key.startswith("module.") else raw_key
+            if key.startswith("dense_feature_extraction.cbam."):
+                cbam_state_dict[key.replace("dense_feature_extraction.cbam.", "", 1)] = value
+            elif key.startswith("cbam."):
+                cbam_state_dict[key.replace("cbam.", "", 1)] = value
+
+        if not cbam_state_dict:
+            cbam_state_dict = {
+                (key[7:] if key.startswith("module.") else key): value
+                for key, value in state_dict.items()
+            }
+
+        self.dense_feature_extraction.cbam.load_state_dict(cbam_state_dict)
 
     def forward(self, batch):
         _, _, h, w = batch.size()
