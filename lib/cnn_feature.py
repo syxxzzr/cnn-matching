@@ -7,6 +7,7 @@ from lib.pyramid import process_multiscale
 from lib.utils import preprocess_image
 
 _MODEL_FILE = "models/d2_tf.pth"
+_CBAM_WIDGET_FILE = "models/cbam_tmrl_final.pth"
 _DEFAULT_SCALES = [0.25, 0.50, 1.0]
 _MAX_EDGE = 2500
 _MAX_SUM_EDGES = 5000
@@ -20,13 +21,13 @@ def _resolve_device(device=None):
     return device
 
 
-def create_feature_extractor(device=None, cbam_weight_file=None):
+def create_feature_extractor(device=None, model_file=_MODEL_FILE, cbam_weight_file=_CBAM_WIDGET_FILE):
     target_device = _resolve_device(device)
     extractor = D2Net(
-        model_file=_MODEL_FILE,
-        use_relu=True,
-        use_cuda=(target_device.type == "cuda"),
+        model_file=model_file,
         cbam_weight_file=cbam_weight_file,
+        use_relu=True,
+        use_cuda=(target_device.type == "cuda")
     )
     extractor.eval()
     if target_device.type == "cuda":
