@@ -37,7 +37,7 @@ class DenseFeatureExtractionModule(nn.Module):
         if use_cbam:
             self.cbam = CBAM(gate_channels=self.num_channels)
         else:
-            self.cbam = lambda x: x
+            self.cbam = nn.Identity()
 
         self.use_relu = use_relu
 
@@ -63,9 +63,10 @@ class D2Net(nn.Module):
             cbam_weight_file=None,
     ):
         super(D2Net, self).__init__()
+        self.use_cbam = use_cbam
 
         self.dense_feature_extraction = DenseFeatureExtractionModule(
-            use_relu=use_relu, use_cuda=use_cuda
+            use_relu=use_relu, use_cuda=use_cuda, use_cbam=use_cbam
         )
 
         self.detection = HardDetectionModule()
@@ -83,11 +84,20 @@ class D2Net(nn.Module):
                     model_state_dict[
                         "dense_feature_extraction.cbam.{}".format(key)
                     ] = value
+            elif not use_cbam:
+                model_state_dict = {
+                    key: value
+                    for key, value in model_state_dict.items()
+                    if not key.startswith("dense_feature_extraction.cbam.")
+                }
             self.load_state_dict(model_state_dict)
         if use_cbam and cbam_weight_file is not None:
             self.load_cbam_weights(cbam_weight_file)
 
     def load_cbam_weights(self, cbam_weight_file):
+        if not self.use_cbam:
+            raise ValueError("Cannot load CBAM weights when use_cbam=False.")
+
         checkpoint = torch.load(cbam_weight_file, map_location="cpu")
         if isinstance(checkpoint, dict) and "model" in checkpoint and isinstance(
                 checkpoint["model"], dict
@@ -101,18 +111,20 @@ class D2Net(nn.Module):
             state_dict = checkpoint
 
         cbam_state_dict = {}
+        expected_cbam_keys = set(self.dense_feature_extraction.cbam.state_dict().keys())
         for raw_key, value in state_dict.items():
             key = raw_key[7:] if raw_key.startswith("module.") else raw_key
             if key.startswith("dense_feature_extraction.cbam."):
                 cbam_state_dict[key.replace("dense_feature_extraction.cbam.", "", 1)] = value
             elif key.startswith("cbam."):
                 cbam_state_dict[key.replace("cbam.", "", 1)] = value
+            elif key in expected_cbam_keys:
+                cbam_state_dict[key] = value
 
         if not cbam_state_dict:
-            cbam_state_dict = {
-                (key[7:] if key.startswith("module.") else key): value
-                for key, value in state_dict.items()
-            }
+            raise RuntimeError(
+                "No CBAM parameters were found in '{}'.".format(cbam_weight_file)
+            )
 
         self.dense_feature_extraction.cbam.load_state_dict(cbam_state_dict)
 
