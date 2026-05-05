@@ -79,3 +79,31 @@ def load_DFMsData(dataset_path = _DFMsData_PATH):
         pair_count += int((len(img_list) * (len(img_list) - 1)) / 2)
 
     return pair_count, lambda : _yield_DFMsData_img(dataset_path, img_dict)
+
+
+""" Load MapData dataset """
+
+_MapData_PATH = r'E:\cmm_proj\MapData-test'
+
+def _yield_MapData(dataset_path, count):
+    for i in range(count):
+        try:
+            image_1 = imageio.imread(os.path.join(dataset_path, 'L', f'L{i+1}.png'))
+            image_2 = imageio.imread(os.path.join(dataset_path, 'R', f'R{i+1}.png'))
+
+            gt_file = open(os.path.join(dataset_path, 'GT', f'GT{i+1}.txt'), 'r', encoding='utf-8')
+            gt_content = gt_file.readlines()
+            gt_file.close()
+            affine_matrix = []
+            for line in gt_content:
+                affine_matrix.append([float(i) for i in line.split()])
+        except:
+            image_1 = np.array([])
+            image_2 = np.array([])
+            affine_matrix = None
+
+        yield f'pair_{i+1}', image_1, image_2, np.array(affine_matrix)
+
+def load_MapData(dataset_path=_MapData_PATH):
+    count = len(os.listdir(os.path.join(dataset_path, 'GT')))
+    return count, lambda : _yield_MapData(dataset_path, count)
