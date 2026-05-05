@@ -58,6 +58,8 @@ def extract_and_match(image_1, image_2):
         residual_threshold=_RESIDUAL_THRESHOLD,
         max_trials=1000,
     )
+    if inliers is None:
+        inliers = np.zeros(locations_1_to_use.shape[0], dtype=bool)
     matches = np.stack((locations_1_to_use[inliers], locations_2_to_use[inliers]), axis=1)
 
     return matches
