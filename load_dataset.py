@@ -52,6 +52,7 @@ def load_OSdataset2(dataset_path = _OSdataset2_TEST_IMG_PATH):
 _DFMsData_PATH = r'.\df-ms-data'
 
 def _yield_DFMsData_img(dataset_path, file_dict):
+    print('[Warning] The affine transformation matrix is missing. The evaluation result will be unreliable.')
     for subdir in file_dict.keys():
         full_subdir = os.path.join(dataset_path, subdir)
         for i in range(len(file_dict[subdir]) - 1):
