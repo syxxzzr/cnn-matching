@@ -1,6 +1,12 @@
 import numpy as np
 
 
+def _as_3ch(image):
+    if image.ndim == 2:
+        return np.repeat(image[:, :, np.newaxis], 3, axis=2)
+    return image
+
+
 def plot_matches(ax, image_1, image_2, matches,
                  keypoints_color='r', matches_color=None, plot_matche_points=True, matchline = True, matchlinewidth = 0.5,
                  alignment='horizontal'):
@@ -31,6 +37,8 @@ def plot_matches(ax, image_1, image_2, matches,
 
     #image1 = img_as_float(image1)
     #image2 = img_as_float(image2)
+    image_1 = _as_3ch(image_1)
+    image_2 = _as_3ch(image_2)
 
     new_shape1 = list(image_1.shape)
     new_shape2 = list(image_2.shape)
@@ -107,6 +115,9 @@ def plot_matches2(ax, image1, image2, keypoints1, keypoints2,
                  keypoints_color='r', matches_color=None, plot_matche_points=True, matchline = True, matchlinewidth = 0.5,
                  alignment='horizontal'):
 
+
+    image1 = _as_3ch(image1)
+    image2 = _as_3ch(image2)
 
     new_shape1 = list(image1.shape)
     new_shape2 = list(image2.shape)
