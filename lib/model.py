@@ -6,7 +6,7 @@ from lib.cbam import CBAM
 
 
 class DenseFeatureExtractionModule(nn.Module):
-    def __init__(self, use_relu=True, use_cuda=True):
+    def __init__(self, use_relu=True, use_cuda=True, use_cbam=True):
         super(DenseFeatureExtractionModule, self).__init__()
 
         self.model = nn.Sequential(
@@ -34,7 +34,10 @@ class DenseFeatureExtractionModule(nn.Module):
             nn.Conv2d(512, 512, 3, padding=2, dilation=2),
         )
         self.num_channels = 512
-        self.cbam = CBAM(gate_channels=self.num_channels)
+        if use_cbam:
+            self.cbam = CBAM(gate_channels=self.num_channels)
+        else:
+            self.cbam = lambda x: x
 
         self.use_relu = use_relu
 
@@ -52,11 +55,12 @@ class DenseFeatureExtractionModule(nn.Module):
 
 class D2Net(nn.Module):
     def __init__(
-        self,
-        model_file=None,
-        use_relu=True,
-        use_cuda=True,
-        cbam_weight_file=None,
+            self,
+            model_file=None,
+            use_relu=True,
+            use_cuda=True,
+            use_cbam=True,
+            cbam_weight_file=None,
     ):
         super(D2Net, self).__init__()
 
@@ -70,9 +74,9 @@ class D2Net(nn.Module):
 
         if model_file is not None:
             model_state_dict = torch.load(model_file)["model"]
-            if not any(
-                key.startswith("dense_feature_extraction.cbam.")
-                for key in model_state_dict
+            if use_cbam and not any(
+                    key.startswith("dense_feature_extraction.cbam.")
+                    for key in model_state_dict
             ):
                 random_cbam_state = self.dense_feature_extraction.cbam.state_dict()
                 for key, value in random_cbam_state.items():
@@ -80,17 +84,17 @@ class D2Net(nn.Module):
                         "dense_feature_extraction.cbam.{}".format(key)
                     ] = value
             self.load_state_dict(model_state_dict)
-        if cbam_weight_file is not None:
+        if use_cbam and cbam_weight_file is not None:
             self.load_cbam_weights(cbam_weight_file)
 
     def load_cbam_weights(self, cbam_weight_file):
         checkpoint = torch.load(cbam_weight_file, map_location="cpu")
         if isinstance(checkpoint, dict) and "model" in checkpoint and isinstance(
-            checkpoint["model"], dict
+                checkpoint["model"], dict
         ):
             state_dict = checkpoint["model"]
         elif isinstance(checkpoint, dict) and "state_dict" in checkpoint and isinstance(
-            checkpoint["state_dict"], dict
+                checkpoint["state_dict"], dict
         ):
             state_dict = checkpoint["state_dict"]
         else:
@@ -186,7 +190,7 @@ class HandcraftedLocalizationModule(nn.Module):
         super(HandcraftedLocalizationModule, self).__init__()
 
         self.di_filter = torch.tensor(
-            [[0, -0.5, 0], [0, 0, 0], [0,  0.5, 0]]
+            [[0, -0.5, 0], [0, 0, 0], [0, 0.5, 0]]
         ).view(1, 1, 3, 3)
         self.dj_filter = torch.tensor(
             [[0, 0, 0], [-0.5, 0, 0.5], [0, 0, 0]]
