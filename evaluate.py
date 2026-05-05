@@ -6,7 +6,7 @@ import cnnmatching
 import load_dataset
 
 _EVALUATE_EPSILON = 3.0
-_DATASET_LOADER = load_dataset.load_OSdataset2
+_DATASET_LOADER = load_dataset.load_DFMsData
 
 def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
     total = matches.shape[0]
@@ -69,8 +69,9 @@ if __name__ == '__main__':
 
     number = 0
     for pair_name, image_1, image_2, affine_matrix in img_yield():
+        number += 1
         if image_1.shape == (0, ) or image_2.shape == (0, ):
-            print(f'{pair_name:<16} Failed to open file')
+            print(f'{number:6d} {pair_name:<16} Failed to open file')
             continue
 
         start_time = time.perf_counter()
@@ -90,7 +91,6 @@ if __name__ == '__main__':
         indicators_sum['SR'] += res['SR']
         indicators_sum['RMSE'] += res['RMSE']
 
-        number += 1
         print(f'{number:6d} {pair_name:<16} {time_spend:<5.2f} {matches.shape[0]:<5d} '
               f'{res['NCM']:<5d} {res['SR']:<6.2%} {res['RMSE']:<5.2f}')
 
