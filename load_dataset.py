@@ -83,7 +83,7 @@ def load_DFMsData(dataset_path = _DFMsData_PATH):
 
 """ Load MapData dataset """
 
-_MapData_PATH = r'E:\cmm_proj\MapData-test'
+_MapData_PATH = r'E:\cmm_proj\dataset\MapData\MapData-test'
 
 def _yield_MapData(dataset_path, count):
     for i in range(count):

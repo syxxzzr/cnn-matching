@@ -3,10 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from lib.cbam import CBAM
+from lib.mbv2_ca import CoordAtt
 
 
 class DenseFeatureExtractionModule(nn.Module):
-    def __init__(self, use_relu=True, use_cuda=True, use_cbam=True):
+    def __init__(self, use_relu=True, use_cuda=True, use_cbam=True, use_ca=False):
         super(DenseFeatureExtractionModule, self).__init__()
 
         self.model = nn.Sequential(
@@ -38,16 +39,22 @@ class DenseFeatureExtractionModule(nn.Module):
             self.cbam = CBAM(gate_channels=self.num_channels)
         else:
             self.cbam = nn.Identity()
+        if use_ca:
+            self.ca = CoordAtt(self.num_channels, self.num_channels)
+        else:
+            self.ca = nn.Identity()
 
         self.use_relu = use_relu
 
         if use_cuda:
             self.model = self.model.cuda()
             self.cbam = self.cbam.cuda()
+            self.ca = self.ca.cuda()
 
     def forward(self, batch):
         output = self.model(batch)
         output = self.cbam(output)
+        output = self.ca(output)
         if self.use_relu:
             output = F.relu(output)
         return output
@@ -61,12 +68,15 @@ class D2Net(nn.Module):
             use_cuda=True,
             use_cbam=True,
             cbam_weight_file=None,
+            use_ca=False,
+            ca_weight_file=None,
     ):
         super(D2Net, self).__init__()
         self.use_cbam = use_cbam
+        self.use_ca = use_ca
 
         self.dense_feature_extraction = DenseFeatureExtractionModule(
-            use_relu=use_relu, use_cuda=use_cuda, use_cbam=use_cbam
+            use_relu=use_relu, use_cuda=use_cuda, use_cbam=use_cbam, use_ca=use_ca
         )
 
         self.detection = HardDetectionModule()
@@ -90,36 +100,68 @@ class D2Net(nn.Module):
                     for key, value in model_state_dict.items()
                     if not key.startswith("dense_feature_extraction.cbam.")
                 }
+            if use_ca and not any(
+                    key.startswith("dense_feature_extraction.ca.")
+                    for key in model_state_dict
+            ):
+                random_ca_state = self.dense_feature_extraction.ca.state_dict()
+                for key, value in random_ca_state.items():
+                    model_state_dict[
+                        "dense_feature_extraction.ca.{}".format(key)
+                    ] = value
+            elif not use_ca:
+                model_state_dict = {
+                    key: value
+                    for key, value in model_state_dict.items()
+                    if not key.startswith("dense_feature_extraction.ca.")
+                }
             self.load_state_dict(model_state_dict)
         if use_cbam and cbam_weight_file is not None:
             self.load_cbam_weights(cbam_weight_file)
+        if use_ca and ca_weight_file is not None:
+            self.load_ca_weights(ca_weight_file)
+
+    @staticmethod
+    def _extract_checkpoint_state_dict(checkpoint):
+        if isinstance(checkpoint, dict) and "model" in checkpoint and isinstance(
+                checkpoint["model"], dict
+        ):
+            return checkpoint["model"]
+        if isinstance(checkpoint, dict) and "state_dict" in checkpoint and isinstance(
+                checkpoint["state_dict"], dict
+        ):
+            return checkpoint["state_dict"]
+        return checkpoint
+
+    @staticmethod
+    def _extract_attention_state_dict(state_dict, module_name, module):
+        module_state_dict = {}
+        expected_keys = set(module.state_dict().keys())
+        dense_prefix = "dense_feature_extraction.{}.".format(module_name)
+        module_prefix = "{}.".format(module_name)
+
+        for raw_key, value in state_dict.items():
+            key = raw_key[7:] if raw_key.startswith("module.") else raw_key
+            if key.startswith(dense_prefix):
+                module_state_dict[key.replace(dense_prefix, "", 1)] = value
+            elif key.startswith(module_prefix):
+                module_state_dict[key.replace(module_prefix, "", 1)] = value
+            elif key in expected_keys:
+                module_state_dict[key] = value
+
+        return module_state_dict
 
     def load_cbam_weights(self, cbam_weight_file):
         if not self.use_cbam:
             raise ValueError("Cannot load CBAM weights when use_cbam=False.")
 
         checkpoint = torch.load(cbam_weight_file, map_location="cpu")
-        if isinstance(checkpoint, dict) and "model" in checkpoint and isinstance(
-                checkpoint["model"], dict
-        ):
-            state_dict = checkpoint["model"]
-        elif isinstance(checkpoint, dict) and "state_dict" in checkpoint and isinstance(
-                checkpoint["state_dict"], dict
-        ):
-            state_dict = checkpoint["state_dict"]
-        else:
-            state_dict = checkpoint
-
-        cbam_state_dict = {}
-        expected_cbam_keys = set(self.dense_feature_extraction.cbam.state_dict().keys())
-        for raw_key, value in state_dict.items():
-            key = raw_key[7:] if raw_key.startswith("module.") else raw_key
-            if key.startswith("dense_feature_extraction.cbam."):
-                cbam_state_dict[key.replace("dense_feature_extraction.cbam.", "", 1)] = value
-            elif key.startswith("cbam."):
-                cbam_state_dict[key.replace("cbam.", "", 1)] = value
-            elif key in expected_cbam_keys:
-                cbam_state_dict[key] = value
+        state_dict = self._extract_checkpoint_state_dict(checkpoint)
+        cbam_state_dict = self._extract_attention_state_dict(
+            state_dict=state_dict,
+            module_name="cbam",
+            module=self.dense_feature_extraction.cbam,
+        )
 
         if not cbam_state_dict:
             raise RuntimeError(
@@ -127,6 +169,25 @@ class D2Net(nn.Module):
             )
 
         self.dense_feature_extraction.cbam.load_state_dict(cbam_state_dict)
+
+    def load_ca_weights(self, ca_weight_file):
+        if not self.use_ca:
+            raise ValueError("Cannot load CA weights when use_ca=False.")
+
+        checkpoint = torch.load(ca_weight_file, map_location="cpu")
+        state_dict = self._extract_checkpoint_state_dict(checkpoint)
+        ca_state_dict = self._extract_attention_state_dict(
+            state_dict=state_dict,
+            module_name="ca",
+            module=self.dense_feature_extraction.ca,
+        )
+
+        if not ca_state_dict:
+            raise RuntimeError(
+                "No CA parameters were found in '{}'.".format(ca_weight_file)
+            )
+
+        self.dense_feature_extraction.ca.load_state_dict(ca_state_dict)
 
     def forward(self, batch):
         _, _, h, w = batch.size()
