@@ -5,8 +5,8 @@ import imageio.v2 as imageio
 
 """ Load customized QXSLAB_SAROPT dataset """
 
-_QXSLAB_SAROPT_TEST_IMG_PATH_1 = r'E:\cmm_proj\QXSLAB_SAROPT\test\opt_256_oc_0.2'
-_QXSLAB_SAROPT_TEST_IMG_PATH_2 = r'E:\cmm_proj\QXSLAB_SAROPT\test\sar_256_oc_0.2'
+_QXSLAB_SAROPT_TEST_IMG_PATH_1 = r'E:\cmm_proj\dataset\QXSLAB_SAROPT\QXSLAB_SAROPT\test\opt_256_oc_0.2'
+_QXSLAB_SAROPT_TEST_IMG_PATH_2 = r'E:\cmm_proj\dataset\QXSLAB_SAROPT\QXSLAB_SAROPT\test\sar_256_oc_0.2'
 
 def _yield_QXSLAB_SAROPT_img(img_path_1, img_path_2, img_list):
     for img_name in img_list:
@@ -28,7 +28,7 @@ def load_QXSLAB_SAROPT(img_path_1 = _QXSLAB_SAROPT_TEST_IMG_PATH_1, img_path_2 =
 
 """ Load OSdataset 2.0 dataset """
 
-_OSdataset2_TEST_IMG_PATH = r'E:\cmm_proj\OSDataset2.0\Patch-level Subset\OSdataset\512\test'
+_OSdataset2_TEST_IMG_PATH = r'E:\cmm_proj\dataset\OSDataset2.0\OSDataset2.0\Patch-level Subset\OSdataset\512\test'
 
 def _yield_OSdataset2_img(dataset_path, count):
     for i in range(1, count + 1):
@@ -107,3 +107,26 @@ def _yield_MapData(dataset_path, count):
 def load_MapData(dataset_path=_MapData_PATH):
     count = len(os.listdir(os.path.join(dataset_path, 'GT')))
     return count, lambda : _yield_MapData(dataset_path, count)
+
+
+""" Load OSdataset 2.0 npy dataset """
+
+_OSdataset2_NPY_TEST_IMG_PATH = r'E:\cmm_proj\dataset\OSDataset2.0\os_testnpy'
+
+def _yield_OSdataset2_npy(dataset_path, image_list):
+    for pair in image_list:
+        try:
+            pair_ctx = np.load(os.path.join(dataset_path, pair), allow_pickle=True).item()
+            image_1 = pair_ctx['ori_opt']
+            image_2 = pair_ctx['ori_sar']
+            affine_matrix = pair_ctx['h_opt2sar']
+        except:
+            image_1 = np.array([])
+            image_2 = np.array([])
+            affine_matrix = None
+
+        yield pair.rstrip('.npy'), image_1, image_2, affine_matrix
+
+def load_OSdataset2_npy(dataset_path=_OSdataset2_NPY_TEST_IMG_PATH):
+    image_list = [i for i in os.listdir(dataset_path) if i.endswith('.npy')]
+    return len(image_list), lambda : _yield_OSdataset2_npy(dataset_path, image_list)

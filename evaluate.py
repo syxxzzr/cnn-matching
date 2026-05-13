@@ -6,7 +6,7 @@ import cnnmatching
 import load_dataset
 
 _EVALUATE_EPSILON = 3.0
-_DATASET_LOADER = load_dataset.load_DFMsData
+_DATASET_LOADER = load_dataset.load_OSdataset2_npy
 
 def evaluate_matches(matches, epsilon=3.0, affine_matrix=None):
     total = matches.shape[0]
